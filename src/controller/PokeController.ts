@@ -1,6 +1,8 @@
 import { request, Request, response, Response } from "express";
 import type TypePoke from "../types/TypePoke";
 import EnumType from "../enum/enumType";
+import PokeRepository from "../repositories/PokeRepository";
+import PokeEntity from "../entity/PokeEntity";
 
 let pokeList: TypePoke[] = [];
 
@@ -11,13 +13,21 @@ function geraId() {
 }
 
 export default class PokeController {
+  constructor(private repository: PokeRepository) {}
+
   createPoke(req: Request, res: Response) {
-    const { name, type, adopted, age, birthDate } = <TypePoke>req.body;
+    const { name, type, adopted, age, birthDate } = <PokeEntity>req.body;
     if (!Object.values(EnumType).includes(type)) {
       return res.status(400).json({ error: "Tipo invalido" });
     }
-    const newPoke: TypePoke = { id: geraId(), name, type, adopted, age, birthDate };
-    pokeList.push(newPoke);
+    const newPoke = new PokeEntity();
+    (newPoke.id = geraId()),
+      (newPoke.name = name),
+      (newPoke.type = type),
+      (newPoke.adopted = adopted),
+      (newPoke.age = age),
+      (newPoke.birthDate = birthDate),
+      this.repository.createPoke(newPoke);
     return res.status(201).json(newPoke);
   }
 
@@ -28,7 +38,7 @@ export default class PokeController {
   AttPoke(req: Request, res: Response) {
     const { id } = req.params;
     const { name, type, adopted, age, birthDate } = req.body as TypePoke;
-    const poke = pokeList.find((pet) => pet.id === Number(id));
+    const poke = pokeList.find((poke) => poke.id === Number(id));
     if (!poke) {
       return res.status(404).json({ erro: "Pokemon não encontrado" });
     }
